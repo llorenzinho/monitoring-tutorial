@@ -9,9 +9,20 @@ data:
   datasource.yaml: |
     apiVersion: 1
     datasources:
-      - name: Loki
-        type: loki
-        url: http://loki.monitoring.svc.cluster.local:3100
-      - name: Tempo
-        type: tempo
-        url: http://tempo.monitoring.svc.cluster.local:3100
+    - name: Tempo
+      type: tempo
+      uid: "tempo"
+      url: http://tempo.monitoring.svc.cluster.local:3100
+    - name: Loki
+      type: loki
+      uid: "loki"
+      url: http://loki.monitoring.svc.cluster.local:3100
+      jsonData:
+        derivedFields:
+          - name: "TraceID"
+            datasourceUid: "tempo"
+            matcherRegex: "(?:trace_id|tid)=(\\w+)" 
+            url: "$${__value.raw}" 
+            # Questo crea il link interno verso Tempo
+            internalLinkEnabled: true
+            internalLinkTargetUid: "tempo"
