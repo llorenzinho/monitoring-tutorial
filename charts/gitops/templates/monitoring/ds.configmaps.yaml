@@ -4,7 +4,7 @@ metadata:
   name: grafana-additional-datasources
   namespace: monitoring
   labels:
-    grafana_datasource: "1" # Questa label è fondamentale per il discovery
+    grafana_datasource: "1"
 spec:
   datasource.yaml: |
     apiVersion: 1
