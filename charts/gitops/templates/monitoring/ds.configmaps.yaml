@@ -46,5 +46,5 @@ data:
         derivedFields:
           - name: "TraceID"
             datasourceUid: "tempo"
-            matcherRegex: "\"trace_id\"\\s*:\\s*\"(\\w+)\""
-            url: "$${__value.raw}"
+            matcherRegex: "(?:traceId|trace_id)[\"']?[:=][\"']?(\\w+)[\"']?"
+            url: "${__value.raw}"
