@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backend
+  namespace: argocd
+  labels:
+    {{- include "gitops.labels" . | nindent 4 }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoURL }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: charts/apps
+  destination:
+    server: {{ .Values.destination.server }}
+    namespace: backend
+  syncPolicy:
+    automated:
+      prune: {{ .Values.syncPolicy.automated.prune }}
+      selfHeal: {{ .Values.syncPolicy.automated.selfHeal }}
+    syncOptions:
+      {{- toYaml .Values.syncPolicy.syncOptions | nindent 6 }} {% endcomment %} {% endcomment %} {% endcomment %}
