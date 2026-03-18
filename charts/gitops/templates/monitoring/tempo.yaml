@@ -39,8 +39,6 @@ spec:
                 path: /var/tempo/wal
 
           reportingEnabled: false
-          metricsGenerator:
-            enabled:
 
         gateway:
           enabled: false
