@@ -6,19 +6,14 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/open-telemetry/opentelemetry-operator.git
-    targetRevision: main
-    path: ""
-    directory:
-      recurse: false
-  source:
-    repoURL: https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/
-    targetRevision: HEAD
-    chart: ""
-  source:
-    repoURL: 'https://github.com/open-telemetry/opentelemetry-operator'
-    targetRevision: v0.115.0
-    path: 'bundle/'
+    repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+    targetRevision: 0.14.7
+    chart: opentelemetry-kube-stack
+    helm:
+      values: |
+        admissionWebhooks:
+          certManager:
+            enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: opentelemetry-operator-system
@@ -29,4 +24,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-      - RespectIgnoreDifferences=true
+      - Validate=false
