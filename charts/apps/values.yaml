@@ -32,7 +32,7 @@ ingress:
   className: nginx
   annotations: {}
   hosts:
-    - host: localhost
+    - host: trace-app
       paths:
         - path: /
           pathType: Prefix

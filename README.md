@@ -176,16 +176,20 @@ The backend is exposed via **ingress-nginx**, deployed as an ArgoCD Application 
 The controller Service uses NodePort `30800`, which the kind cluster maps to `localhost:8800` (see `kind/cluster.yaml`).
 
 ```
-localhost:8800  →  kind NodePort 30800  →  ingress-nginx  →  Service/nest-be-example:80  →  Pod:3000
+trace-app:8800  →  kind NodePort 30800  →  ingress-nginx  →  Service/nest-be-example:80  →  Pod:3000
+```
+
+Add the hostname to `/etc/hosts` (one-time setup):
+
+```bash
+echo "127.0.0.1 trace-app" | sudo tee -a /etc/hosts
 ```
 
 Once the bootstrap is applied and ArgoCD has synced, the API is reachable at:
 
 ```bash
-curl http://localhost:8800/
+curl http://trace-app:8800/
 ```
-
-No `/etc/hosts` changes are needed.
 
 ## Building and Loading the Backend Image
 
