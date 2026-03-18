@@ -15,6 +15,12 @@ spec:
           admissionWebhooks:
             patch:
               enabled: true
+        grafana:
+            sidecar:
+                datasources:
+                enabled: true
+                label: grafana_datasource
+                labelValue: "1"
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
