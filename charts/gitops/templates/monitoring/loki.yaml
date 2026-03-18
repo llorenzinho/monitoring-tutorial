@@ -35,12 +35,12 @@ spec:
                   prefix: index_
                   period: 24h
 
-        backend:
-          replicas: 0
-        read:
-          replicas: 0
-        write:
-          replicas: 0
+          backend:
+            replicas: 0
+          read:
+            replicas: 0
+          write:
+            replicas: 0
 
         promtail:
           enabled: true
