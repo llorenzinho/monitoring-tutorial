@@ -150,6 +150,29 @@ kubectl get secret argocd-initial-admin-secret -n argocd \
 
 The ArgoCD UI is available at [http://localhost:8080](http://localhost:8080) (username: `admin`).
 
+## Building and Loading the Backend Image
+
+When working locally with `kind`, there is no need to push the image to a public registry. Build and load it directly into the cluster nodes:
+
+```bash
+# Build the image
+docker build -t nest-be-example:latest apps/nest-be-example/
+
+# Load it into the kind cluster (skips any registry)
+kind load docker-image nest-be-example:latest --name monitoring-tutorial
+```
+
+The `charts/apps/values.yaml` references this local image:
+
+```yaml
+image:
+  repository: nest-be-example
+  tag: latest
+  pullPolicy: IfNotPresent   # never pull – use the locally loaded image
+```
+
+> **Tip:** every time you rebuild the image, re-run `kind load docker-image` and then restart the backend pods (or trigger an ArgoCD hard-refresh) to pick up the new image.
+
 ## Bootstrap (App of Apps)
 
 The project uses the **App of Apps** pattern. A single Application (`bootstrap`) points to `charts/gitops`, which contains one ArgoCD `Application` per component.
@@ -207,29 +230,6 @@ curl http://trace-app:8800/
 ```
 
 > **Note:** the traffic generator (`scripts/traffic-gen.go`) resolves `trace-app` to `127.0.0.1` internally via a custom dialer, so it works without the `/etc/hosts` entry.
-
-## Building and Loading the Backend Image
-
-When working locally with `kind`, there is no need to push the image to a public registry. Build and load it directly into the cluster nodes:
-
-```bash
-# Build the image
-docker build -t nest-be-example:latest apps/nest-be-example/
-
-# Load it into the kind cluster (skips any registry)
-kind load docker-image nest-be-example:latest --name monitoring-tutorial
-```
-
-The `charts/apps/values.yaml` references this local image:
-
-```yaml
-image:
-  repository: nest-be-example
-  tag: latest
-  pullPolicy: IfNotPresent   # never pull – use the locally loaded image
-```
-
-> **Tip:** every time you rebuild the image, re-run `kind load docker-image` and then restart the backend pods (or trigger an ArgoCD hard-refresh) to pick up the new image.
 
 ## Generating Traffic (Grafana test data)
 
