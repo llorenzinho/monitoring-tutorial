@@ -1,0 +1,15 @@
+# Repository that ArgoCD will sync from
+repoURL: https://github.com/llorenzinho/monitoring-tutorial.git
+targetRevision: HEAD
+
+# Destination cluster
+destination:
+  server: https://kubernetes.default.svc
+
+# ArgoCD sync policy applied to all child Applications
+syncPolicy:
+  automated:
+    prune: true
+    selfHeal: true
+  syncOptions:
+    - CreateNamespace=true
