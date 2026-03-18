@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: backend
+  name: cloudnative-pg
   namespace: argocd
   labels:
     {{- include "gitops.labels" . | nindent 4 }}
@@ -11,11 +11,7 @@ spec:
   project: default
   source:
     repoURL: https://cloudnative-pg.github.io/charts
-    targetRevision: cluster-v0.6.0
-    path: charts/apps
-    helm:
-      valueFiles:
-        - values.yaml
+    targetRevision: 0.27.1
   destination:
     server: https://kubernetes.default.svc
     namespace: operators
