@@ -18,7 +18,7 @@ serviceAccount:
   name: ""
 
 podAnnotations:
-  instrumentation.opentelemetry.io/inject-nodejs: "monitoring/nestjs-instrumentation"
+  instrumentation.opentelemetry.io/inject-nodejs: "nestjs-instrumentation"
 podLabels: {}
 
 podSecurityContext: {}
