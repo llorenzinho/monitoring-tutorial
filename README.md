@@ -214,6 +214,20 @@ image:
 
 > **Tip:** every time you rebuild the image, re-run `kind load docker-image` and then restart the backend pods (or trigger an ArgoCD hard-refresh) to pick up the new image.
 
+## Generating Traffic (Grafana test data)
+
+`scripts/traffic-gen.go` sends a continuous mix of requests (`GET /`, `GET /items`, `GET /items/:id`, `POST /items`, `DELETE /items/:id`) until stopped. No external dependencies — standard library only.
+
+```bash
+# default: trace-app:8800, one request every 300 ms
+go run scripts/traffic-gen.go
+
+# custom base URL and interval
+go run scripts/traffic-gen.go -base-url http://trace-app:8800 -interval 500ms
+```
+
+Stop with `Ctrl+C`. A summary (`total / success / errors`) is printed on exit, and running totals are logged every 50 requests.
+
 ---
 
 > This repository is for educational purposes. Manifests are designed for clarity over production hardening.
