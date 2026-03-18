@@ -2,7 +2,6 @@ apiVersion: opentelemetry.io/v1alpha1
 kind: Instrumentation
 metadata:
   name: nestjs-instrumentation
-  namespace: monitoring
 spec:
   exporter:
     endpoint: http://otel-collector.monitoring.svc.cluster.local:4317
