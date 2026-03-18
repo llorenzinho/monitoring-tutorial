@@ -157,3 +157,9 @@ The step-by-step guide is developed incrementally — each step is documented in
 ---
 
 > This repository is for educational purposes. Manifests are designed for clarity, not for production use.
+
+
+##### TO ADD
+
+sudo sysctl -w fs.inotify.max_user_watches=524288
+sudo sysctl -w fs.inotify.max_user_instances=512
