@@ -11,7 +11,7 @@ data:
     datasources:
       - name: Loki
         type: loki
-        url: http://loki-canary.monitoring.svc.cluster.local:3500
+        url: http://loki-gateway.monitoring.svc.cluster.local
       - name: Tempo
         type: tempo
         url: http://tempo.monitoring.svc.cluster.local:3100
