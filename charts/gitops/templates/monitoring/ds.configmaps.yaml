@@ -13,6 +13,11 @@ data:
       type: tempo
       uid: "tempo"
       url: http://tempo.monitoring.svc.cluster.local:3100
+      jsonData:
+        httpMethod: GET
+        lokiSearch:
+          datasourceUid: "loki"
+
     - name: Loki
       type: loki
       uid: "loki"
@@ -21,8 +26,6 @@ data:
         derivedFields:
           - name: "TraceID"
             datasourceUid: "tempo"
-            matcherRegex: "(?:trace_id|tid)=(\\w+)" 
-            url: "$${__value.raw}" 
-            # Questo crea il link interno verso Tempo
+            matcherRegex: "\"traceId\"\\s*:\\s*\"(\\w+)\""
             internalLinkEnabled: true
             internalLinkTargetUid: "tempo"
