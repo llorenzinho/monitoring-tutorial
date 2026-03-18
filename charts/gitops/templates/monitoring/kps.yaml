@@ -15,6 +15,9 @@ spec:
           admissionWebhooks:
             patch:
               enabled: true
+        prometheus:
+          prometheusSpec:
+            enableRemoteWriteReceiver: true
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
