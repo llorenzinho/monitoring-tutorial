@@ -32,8 +32,10 @@ spec:
         endpoint: tempo.monitoring.svc.cluster.local:4317 
         tls:
           insecure: true
-      prometheus:
-        endpoint: 0.0.0.0:8889
+      otlphttp/prometheus:
+        endpoint: http://prometheus-operated.monitoring.svc.cluster.local:9090/api/v1/otlp
+        tls:
+          insecure: true
 
     service:
       pipelines:
@@ -45,4 +47,4 @@ spec:
       metrics:
           receivers: [servicegraph]
           processors: [batch]
-          exporters: [prometheus]
+          exporters: [otlphttp/prometheus]
