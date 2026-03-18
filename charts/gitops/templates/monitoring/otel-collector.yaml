@@ -23,7 +23,7 @@ spec:
 
     exporters:
       otlphttp/tempo:
-        endpoint: http://tempo.monitoring.svc.cluster.local:3100/otlp
+        endpoint: http://tempo.monitoring.svc.cluster.local:3100
         tls:
           insecure: true
 
