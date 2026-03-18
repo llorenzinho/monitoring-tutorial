@@ -15,7 +15,7 @@ spec:
     targetRevision: 0.27.1
   destination:
     server: https://kubernetes.default.svc
-    namespace: operators
+    namespace: cloudnative-pg-system
   syncPolicy:
     automated:
         prune: true
