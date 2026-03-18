@@ -99,7 +99,7 @@ env:
   - name: DB_PORT
     value: "5432"
   - name: DB_NAME
-    value: nest_example
+    value: app
   - name: DB_USER
     valueFrom:
       secretKeyRef:
