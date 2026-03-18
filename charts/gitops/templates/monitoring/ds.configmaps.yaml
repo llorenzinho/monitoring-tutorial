@@ -7,7 +7,6 @@ metadata:
     grafana_datasource: "1"
 data:
   datasource.yaml: |
-    apiVersion: 1
     datasources:
     - name: Tempo
       type: tempo
@@ -46,6 +45,4 @@ data:
           - name: "TraceID"
             datasourceUid: "tempo"
             matcherRegex: "\"traceId\"\\s*:\\s*\"(\\w+)\""
-            internalLinkEnabled: true
-            internalLinkTargetUid: "tempo"
             url: "$${__value.raw}"
