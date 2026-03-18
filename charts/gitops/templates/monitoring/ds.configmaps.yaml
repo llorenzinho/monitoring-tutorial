@@ -14,17 +14,34 @@ data:
       uid: "tempo"
       url: http://tempo.monitoring.svc.cluster.local:3100
       jsonData:
-        httpMethod: GET
-        lokiSearch:
-          datasourceUid: "loki"
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: "-1h"
+          spanEndTimeShift: "1h"
+          tags:
+            - key: "service.name"
+              value: "service_name"
+            - key: "host.name"
+              value: "host"
+          filterByTraceID: true
+          filterBySpanID: false
+          customQuery: true
+          query: '{$${__tags}} |= "$${__trace.traceId}"'
         serviceMap:
-          datasourceUid: 'prometheus'
+          datasourceUid: prometheus
+        nodeGraph:
+          enabled: true
+        search:
+          hide: false
+        lokiSearch:
+          datasourceUid: loki
 
     - name: Loki
       type: loki
       uid: "loki"
       url: http://loki.monitoring.svc.cluster.local:3100
       jsonData:
+        maxLines: 1000
         derivedFields:
           - name: "TraceID"
             datasourceUid: "tempo"
