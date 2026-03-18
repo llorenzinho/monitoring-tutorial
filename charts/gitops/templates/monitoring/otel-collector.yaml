@@ -44,7 +44,7 @@ spec:
           processors: [memory_limiter, batch]
           exporters: [otlp, servicegraph]
 
-      metrics:
+        metrics:
           receivers: [servicegraph]
           processors: [batch]
           exporters: [otlphttp/prometheus]
