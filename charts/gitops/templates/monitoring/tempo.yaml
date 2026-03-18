@@ -20,6 +20,15 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
+
+          metricsGenerator:
+            enabled: true
+            config:
+              remote_write:
+                - url: "http://prometheus-operated.monitoring.svc.cluster.local:9090/api/v1/write"
+              processors:
+                - service-graphs
+                - span-metrics
           
           storage:
             trace:
