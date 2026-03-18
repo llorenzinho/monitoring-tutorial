@@ -249,4 +249,22 @@ Stop with `Ctrl+C`. A summary (`total / success / errors`) is printed on exit, a
 
 ---
 
+## Troubleshooting
+
+### OTel sidecar not injected on first boot
+
+On the very first install, the `backend` Application (wave 4) may start before the OpenTelemetry Operator webhooks are fully ready. In that case the instrumentation sidecar is **not** injected into the pod, so traces will be missing in Tempo.
+
+**How to detect it:** the backend pod has no `otc-container` sidecar listed in `kubectl describe pod`.
+
+**Fix:** restart the backend Deployment after the operator is healthy:
+
+```bash
+kubectl rollout restart deployment/nest-be-example -n backend
+```
+
+ArgoCD will sync the rollout automatically. After the new pod starts you should see traces appearing in Grafana → Tempo.
+
+---
+
 > This repository is for educational purposes. Manifests are designed for clarity over production hardening.
