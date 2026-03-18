@@ -15,10 +15,10 @@ spec:
     path: charts/apps
   destination:
     server: https://kubernetes.default.svc
-    namespace: backend
+    namespace: default
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
+      - CreateNamespace=false
