@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: nest-be-example:latest
+  repository: nest-be-example
   pullPolicy: IfNotPresent
   tag: latest
 
