@@ -12,7 +12,7 @@ data:
     datasources:
     - name: Tempo
       type: tempo
-      uid: "tempo"
+      uid: tempo
       url: http://tempo.monitoring.svc.cluster.local:3100
       jsonData:
         tracesToLogsV2:
@@ -44,7 +44,7 @@ data:
       jsonData:
         maxLines: 1000
         derivedFields:
-          - name: "TraceID"
-            datasourceUid: "tempo"
+          - name: TraceID
+            datasourceUid: tempo
             matcherRegex: "\"traceId\"\\s*:\\s*\"(\\w+)\""
             url: "$${__value.raw}"
