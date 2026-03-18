@@ -169,6 +169,24 @@ kubectl apply -f argocd/bootstrap.yaml
 
 After this, every push to the repository is automatically reconciled by ArgoCD.
 
+## Ingress
+
+The backend is exposed via **ingress-nginx**, deployed as an ArgoCD Application in `charts/gitops/templates/utils/ingress-nginx.yaml`.
+
+The controller Service uses NodePort `30800`, which the kind cluster maps to `localhost:8800` (see `kind/cluster.yaml`).
+
+```
+localhost:8800  →  kind NodePort 30800  →  ingress-nginx  →  Service/nest-be-example:80  →  Pod:3000
+```
+
+Once the bootstrap is applied and ArgoCD has synced, the API is reachable at:
+
+```bash
+curl http://localhost:8800/
+```
+
+No `/etc/hosts` changes are needed.
+
 ## Building and Loading the Backend Image
 
 When working locally with `kind`, there is no need to push the image to a public registry. Build and load it directly into the cluster nodes:

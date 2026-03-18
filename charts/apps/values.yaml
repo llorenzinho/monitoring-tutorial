@@ -28,14 +28,14 @@ service:
   port: 80
 
 ingress:
-  enabled: false
-  className: ""
+  enabled: true
+  className: nginx
   annotations: {}
   hosts:
-    - host: chart-example.local
+    - host: localhost
       paths:
         - path: /
-          pathType: ImplementationSpecific
+          pathType: Prefix
   tls: []
 
 # -- Expose the service via gateway-api HTTPRoute
