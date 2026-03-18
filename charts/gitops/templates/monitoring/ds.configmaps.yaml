@@ -17,6 +17,8 @@ data:
         httpMethod: GET
         lokiSearch:
           datasourceUid: "loki"
+        serviceMap:
+          datasourceUid: 'prometheus'
 
     - name: Loki
       type: loki
