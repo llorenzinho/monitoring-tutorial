@@ -280,7 +280,7 @@ On the very first install, the `backend` Application (wave 4) may start before t
 **Fix:** restart the backend Deployment after the operator is healthy:
 
 ```bash
-kubectl rollout restart deployment/nest-be-example -n backend
+kubectl rollout restart deployment/nest-be-example -n default
 ```
 
 ArgoCD will sync the rollout automatically. After the new pod starts you should see traces appearing in Grafana → Tempo.
