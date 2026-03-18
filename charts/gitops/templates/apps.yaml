@@ -14,11 +14,11 @@ spec:
     targetRevision: {{ .Values.targetRevision }}
     path: charts/apps
   destination:
-    server: {{ .Values.destination.server }}
+    server: https://kubernetes.default.svc
     namespace: backend
   syncPolicy:
     automated:
-      prune: {{ .Values.syncPolicy.automated.prune }}
-      selfHeal: {{ .Values.syncPolicy.automated.selfHeal }}
+      prune: true
+      selfHeal: true
     syncOptions:
-      {{- toYaml .Values.syncPolicy.syncOptions | nindent 6 }} {% endcomment %} {% endcomment %} {% endcomment %}
+      - CreateNamespace=true
