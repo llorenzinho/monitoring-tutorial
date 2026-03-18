@@ -1,38 +1,50 @@
 # Monitoring Tutorial
 
-A sample project showing how to deploy a backend application on Kubernetes with a full observability stack, managed via ArgoCD.
+A sample project showing how to deploy a NestJS backend on Kubernetes with a full observability stack (metrics, logs, traces), managed via ArgoCD using the App of Apps pattern.
 
 ## Tech Stack
 
 | Component | Role |
 |---|---|
-| **Kubernetes** | Container orchestration |
+| **Kubernetes (kind)** | Container orchestration (local cluster) |
 | **ArgoCD** | GitOps – declarative deployment from this repository |
-| **Prometheus** | Metrics collection and storage |
-| **Grafana** | Visualization of metrics, logs, and traces |
-| **Loki** | Log aggregation and storage |
-| **OpenTelemetry** | Metrics, logs, and traces collection (OTLP) |
+| **kube-prometheus-stack** | Prometheus + Grafana + AlertManager |
+| **Loki** | Log aggregation |
+| **Promtail** | Log shipping (DaemonSet → Loki) |
+| **Tempo** | Distributed tracing backend |
+| **OpenTelemetry Operator** | Manages OTel collectors via CRDs |
+| **OpenTelemetry Collector** | Receives OTLP and forwards to Tempo |
+| **cert-manager** | TLS certificate management (required by OTel webhooks) |
+| **CloudNative PG (CNPG)** | PostgreSQL operator |
+| **NestJS** | Backend REST API, instrumented with OpenTelemetry |
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Kubernetes Cluster                │
-│                                                     │
-│  ┌──────────┐    ┌──────────────────────────────┐  │
-│  │  ArgoCD  │───▶│         Namespaces            │  │
-│  └──────────┘    │                              │  │
-│                  │  ┌──────────┐  ┌──────────┐  │  │
-│                  │  │ backend  │  │monitoring│  │  │
-│                  │  │          │  │          │  │  │
-│                  │  │ REST API │  │Prometheus│  │  │
-│                  │  │  (Go /   │  │  Loki    │  │  │
-│                  │  │ Node.js) │  │  Grafana │  │  │
-│                  │  └────┬─────┘  └────▲─────┘  │  │
-│                  │       │  OTel       │         │  │
-│                  │       └─────────────┘         │  │
-│                  └──────────────────────────────┘  │
-└─────────────────────────────────────────────────────┘
+                        ┌─────────────────────────────────────────────────┐
+                        │              Kubernetes Cluster                  │
+                        │                                                  │
+  git push ────────────▶│  ArgoCD                                         │
+                        │    └─ bootstrap (App of Apps)                   │
+                        │         └─ charts/gitops                        │
+                        │               ├─ cert-manager                   │
+                        │               ├─ cloudnative-pg + pg-cluster    │
+                        │               ├─ kube-prometheus-stack          │
+                        │               ├─ loki                           │
+                        │               ├─ promtail                       │
+                        │               ├─ tempo                          │
+                        │               ├─ opentelemetry-operator         │
+                        │               └─ backend (charts/apps)          │
+                        │                                                  │
+                        │  ┌─────────────┐   OTLP    ┌──────────────────┐ │
+                        │  │   NestJS    │──────────▶│  OTel Collector  │ │
+                        │  │   backend   │           │  (traces → Tempo)│ │
+                        │  └─────────────┘           └──────────────────┘ │
+                        │                                                  │
+                        │  ┌──────────┐  ┌──────┐  ┌───────┐  ┌───────┐  │
+                        │  │Prometheus│  │ Loki │  │ Tempo │  │Grafana│  │
+                        │  └──────────┘  └──────┘  └───────┘  └───────┘  │
+                        └─────────────────────────────────────────────────┘
 ```
 
 ## Repository Structure
@@ -40,41 +52,47 @@ A sample project showing how to deploy a backend application on Kubernetes with 
 ```
 monitoring-tutorial/
 ├── README.md
-├── backend/                  # Backend source code
-│   ├── Dockerfile
-│   └── ...
-├── k8s/                      # Kubernetes manifests
-│   ├── backend/
-│   ├── monitoring/
-│   │   ├── prometheus/
-│   │   ├── loki/
-│   │   ├── grafana/
-│   │   └── opentelemetry/
-│   └── argocd/               # ApplicationSet and App definitions
-├── kind/                     # Local cluster setup
-│   ├── cluster.yaml          # Kind cluster configuration
-│   └── cluster.sh            # Helper script (up / down / status)
-└── dashboards/               # Grafana dashboards (JSON)
+├── apps/
+│   └── nest-be-example/          # NestJS backend source code + Dockerfile
+├── argocd/
+│   └── bootstrap.yaml            # Root Application (apply once manually)
+├── charts/
+│   ├── apps/                     # Helm chart for the NestJS backend
+│   └── gitops/                   # App of Apps chart
+│       └── templates/
+│           ├── apps.yaml         # ArgoCD Application → charts/apps
+│           ├── monitoring/       # Loki, Tempo, Promtail, OTel, Prometheus, datasources
+│           ├── postgres/         # CNPG operator + Cluster + Secrets
+│           └── utils/            # cert-manager
+└── kind/
+    ├── cluster.yaml              # Kind cluster configuration
+    └── cluster.sh                # Helper script (up / down / status)
 ```
-
-## Roadmap
-
-- [ ] **Step 1** – Create the Backend (REST API with OpenTelemetry instrumentation)
-- [ ] **Step 2** – Containerize with Docker
-- [ ] **Step 3** – Kubernetes manifests for the Backend
-- [ ] **Step 4** – Deploy ArgoCD on the cluster
-- [ ] **Step 5** – Deploy Prometheus
-- [ ] **Step 6** – Deploy Loki
-- [ ] **Step 7** – Deploy OpenTelemetry Collector
-- [ ] **Step 8** – Deploy Grafana with pre-configured datasources and dashboards
-- [ ] **Step 9** – ArgoCD Applications for GitOps management of the full stack
 
 ## Prerequisites
 
-- `kubectl` configured with access to a Kubernetes cluster (e.g. `kind`, `minikube`, or a cloud cluster)
-- `helm` v3+
-- `argocd` CLI
-- `docker` for building images
+- [`kubectl`](https://kubernetes.io/docs/tasks/tools/)
+- [`helm`](https://helm.sh/docs/intro/install/) v3+
+- [`kind`](https://kind.sigs.k8s.io/docs/user/quick-start/)
+- [`argocd` CLI](https://argo-cd.readthedocs.io/en/stable/cli_installation/)
+- [`docker`](https://docs.docker.com/engine/install/)
+
+## OS-level Configuration
+
+Before starting the cluster, apply these kernel parameters to avoid errors in `kind`, `promtail`, and other file-watcher-heavy workloads:
+
+```bash
+sudo sysctl -w fs.inotify.max_user_watches=524288
+sudo sysctl -w fs.inotify.max_user_instances=512
+```
+
+To persist across reboots:
+
+```bash
+echo "fs.inotify.max_user_watches=524288" | sudo tee -a /etc/sysctl.d/99-kind.conf
+echo "fs.inotify.max_user_instances=512"  | sudo tee -a /etc/sysctl.d/99-kind.conf
+sudo sysctl -p /etc/sysctl.d/99-kind.conf
+```
 
 ## Local Cluster (Kind)
 
@@ -125,41 +143,55 @@ kubectl get secret argocd-initial-admin-secret -n argocd \
   -o jsonpath="{.data.password}" | base64 -d && echo
 ```
 
-The ArgoCD UI will be available at [http://localhost:8080](http://localhost:8080) (username: `admin`).
+The ArgoCD UI is available at [http://localhost:8080](http://localhost:8080) (username: `admin`).
 
 ## Bootstrap (App of Apps)
 
-The project uses the **App of Apps** pattern. A single Application (`bootstrap`) points to `charts/gitops`, which in turn contains one ArgoCD `Application` per component.
+The project uses the **App of Apps** pattern. A single Application (`bootstrap`) points to `charts/gitops`, which contains one ArgoCD `Application` per component.
 
 ```
 argocd/bootstrap.yaml
         │
         ▼
-charts/gitops/          ← Helm chart (this repo)
+charts/gitops/               ← this repo, managed by ArgoCD
   templates/
-    app-backend.yaml    → namespace: backend   (charts/apps)
-    app-monitoring.yaml → namespace: monitoring (charts/monitoring)
+    apps.yaml                → ns: default    (charts/apps – NestJS backend)
+    monitoring/              → ns: monitoring  (Prometheus, Loki, Tempo, OTel…)
+    postgres/                → ns: default    (CNPG operator + cluster)
+    utils/cert-manager.yaml  → ns: cert-manager
 ```
 
-Before applying, set the correct `repoURL` in both files:
+Apply once to bootstrap everything:
 
 ```bash
-# one-time manual apply – ArgoCD takes over from here
 kubectl apply -f argocd/bootstrap.yaml
 ```
 
 After this, every push to the repository is automatically reconciled by ArgoCD.
 
-## Getting Started
+## Building and Loading the Backend Image
 
-The step-by-step guide is developed incrementally — each step is documented in the corresponding section of the repository as it is completed.
+When working locally with `kind`, there is no need to push the image to a public registry. Build and load it directly into the cluster nodes:
+
+```bash
+# Build the image
+docker build -t nest-be-example:latest apps/nest-be-example/
+
+# Load it into the kind cluster (skips any registry)
+kind load docker-image nest-be-example:latest --name monitoring-tutorial
+```
+
+The `charts/apps/values.yaml` must reference this local image:
+
+```yaml
+image:
+  repository: nest-be-example
+  tag: latest
+  pullPolicy: IfNotPresent   # never pull – use the locally loaded image
+```
+
+> **Tip:** every time you rebuild the image, re-run `kind load docker-image` and then restart the backend pods (or trigger an ArgoCD hard-refresh) to pick up the new image.
 
 ---
 
-> This repository is for educational purposes. Manifests are designed for clarity, not for production use.
-
-
-##### TO ADD
-
-sudo sysctl -w fs.inotify.max_user_watches=524288
-sudo sysctl -w fs.inotify.max_user_instances=512
+> This repository is for educational purposes. Manifests are designed for clarity over production hardening.
