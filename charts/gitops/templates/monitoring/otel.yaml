@@ -11,6 +11,8 @@ spec:
     chart: opentelemetry-operator
     helm:
       values: |
+        manager:
+          featureGates: []
         admissionWebhooks:
           certManager:
             enabled: false
