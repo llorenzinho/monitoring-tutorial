@@ -17,7 +17,13 @@ spec:
 
         containerSecurityContext:
           privileged: true
+          allowPrivilegeEscalation: true
           runAsUser: 0
+          readOnlyRootFilesystem: false
+          capabilities:
+            add:
+              - SYS_ADMIN
+            drop: []
         
         serviceMonitor:
           enabled: true
