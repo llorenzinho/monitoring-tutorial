@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: grafana-additional-datasources
   namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
   labels:
     grafana_datasource: "1"
 data:

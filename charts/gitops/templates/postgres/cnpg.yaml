@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: cloudnative-pg
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
   labels:
     {{- include "gitops.labels" . | nindent 4 }}
   finalizers:

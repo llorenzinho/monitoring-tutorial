@@ -8,43 +8,45 @@ A sample project showing how to deploy a NestJS backend on Kubernetes with a ful
 |---|---|
 | **Kubernetes (kind)** | Container orchestration (local cluster) |
 | **ArgoCD** | GitOps – declarative deployment from this repository |
+| **ingress-nginx** | Ingress controller (NodePort → localhost) |
+| **cert-manager** | TLS certificate management (required by OTel webhooks) |
 | **kube-prometheus-stack** | Prometheus + Grafana + AlertManager |
 | **Loki** | Log aggregation |
 | **Promtail** | Log shipping (DaemonSet → Loki) |
 | **Tempo** | Distributed tracing backend |
 | **OpenTelemetry Operator** | Manages OTel collectors via CRDs |
 | **OpenTelemetry Collector** | Receives OTLP and forwards to Tempo |
-| **cert-manager** | TLS certificate management (required by OTel webhooks) |
 | **CloudNative PG (CNPG)** | PostgreSQL operator |
 | **NestJS** | Backend REST API, instrumented with OpenTelemetry |
 
 ## Architecture
 
 ```
-                        ┌─────────────────────────────────────────────────┐
-                        │              Kubernetes Cluster                  │
-                        │                                                  │
-  git push ────────────▶│  ArgoCD                                         │
-                        │    └─ bootstrap (App of Apps)                   │
-                        │         └─ charts/gitops                        │
-                        │               ├─ cert-manager                   │
-                        │               ├─ cloudnative-pg + pg-cluster    │
-                        │               ├─ kube-prometheus-stack          │
-                        │               ├─ loki                           │
-                        │               ├─ promtail                       │
-                        │               ├─ tempo                          │
-                        │               ├─ opentelemetry-operator         │
-                        │               └─ backend (charts/apps)          │
-                        │                                                  │
-                        │  ┌─────────────┐   OTLP    ┌──────────────────┐ │
-                        │  │   NestJS    │──────────▶│  OTel Collector  │ │
-                        │  │   backend   │           │  (traces → Tempo)│ │
-                        │  └─────────────┘           └──────────────────┘ │
-                        │                                                  │
-                        │  ┌──────────┐  ┌──────┐  ┌───────┐  ┌───────┐  │
-                        │  │Prometheus│  │ Loki │  │ Tempo │  │Grafana│  │
-                        │  └──────────┘  └──────┘  └───────┘  └───────┘  │
-                        └─────────────────────────────────────────────────┘
+                        ┌──────────────────────────────────────────────────────┐
+                        │                  Kubernetes Cluster                  │
+                        │                                                      │
+  git push ────────────▶│  ArgoCD                                             │
+                        │    └─ bootstrap (App of Apps)                       │
+                        │         └─ charts/gitops                            │
+                        │               ├─ ingress-nginx    (wave 1)          │
+                        │               ├─ cert-manager     (wave 1)          │
+                        │               ├─ otel-operator    (wave 2)          │
+                        │               ├─ cloudnative-pg   (wave 2)          │
+                        │               ├─ kube-prom-stack  (wave 3)          │
+                        │               ├─ loki / tempo / promtail (wave 3)   │
+                        │               ├─ pg-cluster / otel-collector (wave 4)│
+                        │               └─ backend          (wave 4)          │
+                        │                                                      │
+  curl trace-app:8800 ─▶│  ingress-nginx ──▶ NestJS backend ──OTLP──▶ OTel   │
+                        │                         │                   Collector│
+                        │                         │ SQL          (traces)  │   │
+                        │                         ▼                       ▼   │
+                        │                    PostgreSQL               Tempo    │
+                        │                                                      │
+                        │  ┌──────────┐  ┌──────┐  ┌───────┐  ┌───────┐     │
+                        │  │Prometheus│  │ Loki │  │ Tempo │  │Grafana│     │
+                        │  └──────────┘  └──────┘  └───────┘  └───────┘     │
+                        └──────────────────────────────────────────────────────┘
 ```
 
 ## Repository Structure
@@ -60,13 +62,15 @@ monitoring-tutorial/
 │   ├── apps/                     # Helm chart for the NestJS backend
 │   └── gitops/                   # App of Apps chart
 │       └── templates/
-│           ├── apps.yaml         # ArgoCD Application → charts/apps
-│           ├── monitoring/       # Loki, Tempo, Promtail, OTel, Prometheus, datasources
+│           ├── apps.yaml         # ArgoCD Application → charts/apps (backend)
+│           ├── monitoring/       # Loki, Tempo, Promtail, OTel operator+collector, Prometheus, datasources
 │           ├── postgres/         # CNPG operator + Cluster + Secrets
-│           └── utils/            # cert-manager
-└── kind/
-    ├── cluster.yaml              # Kind cluster configuration
-    └── cluster.sh                # Helper script (up / down / status)
+│           └── utils/            # cert-manager, ingress-nginx
+├── kind/
+│   ├── cluster.yaml              # Kind cluster configuration
+│   └── cluster.sh                # Helper script (up / down / status)
+└── scripts/
+    └── traffic-gen.go            # HTTP traffic generator (Go, stdlib only)
 ```
 
 ## Prerequisites
@@ -76,6 +80,7 @@ monitoring-tutorial/
 - [`kind`](https://kind.sigs.k8s.io/docs/user/quick-start/)
 - [`argocd` CLI](https://argo-cd.readthedocs.io/en/stable/cli_installation/)
 - [`docker`](https://docs.docker.com/engine/install/)
+- [`go`](https://go.dev/doc/install) 1.21+ (only for the traffic generator)
 
 ## OS-level Configuration
 
@@ -114,7 +119,7 @@ Exposed ports on `localhost`:
 | `8080` | ArgoCD UI |
 | `3000` | Grafana |
 | `9090` | Prometheus |
-| `8800` | Backend API |
+| `8800` | Backend API (via ingress-nginx) |
 
 ## ArgoCD Installation
 
@@ -153,12 +158,13 @@ The project uses the **App of Apps** pattern. A single Application (`bootstrap`)
 argocd/bootstrap.yaml
         │
         ▼
-charts/gitops/               ← this repo, managed by ArgoCD
+charts/gitops/                    ← this repo, managed by ArgoCD
   templates/
-    apps.yaml                → ns: default    (charts/apps – NestJS backend)
-    monitoring/              → ns: monitoring  (Prometheus, Loki, Tempo, OTel…)
-    postgres/                → ns: default    (CNPG operator + cluster)
-    utils/cert-manager.yaml  → ns: cert-manager
+    apps.yaml                     → ns: default                (NestJS backend)
+    monitoring/                   → ns: monitoring / opentelemetry-operator-system
+    postgres/                     → ns: cloudnative-pg-system / default
+    utils/cert-manager.yaml       → ns: cert-manager
+    utils/ingress-nginx.yaml      → ns: ingress-nginx
 ```
 
 Apply once to bootstrap everything:
@@ -168,6 +174,17 @@ kubectl apply -f argocd/bootstrap.yaml
 ```
 
 After this, every push to the repository is automatically reconciled by ArgoCD.
+
+## Sync Waves (Installation Order)
+
+Resources in `charts/gitops` use `argocd.argoproj.io/sync-wave` annotations so that ArgoCD installs components in dependency order. Each wave must reach `Healthy` before the next one starts.
+
+| Wave | Components | Reason |
+|---|---|---|
+| **1** | `cert-manager`, `ingress-nginx` | No dependencies |
+| **2** | `opentelemetry-operator`, `cloudnative-pg` | Require cert-manager webhooks |
+| **3** | `kube-prometheus-stack`, `loki`, `tempo`, `promtail`, pg secrets | Require operators to be ready |
+| **4** | `otel-collector` CR, `pg-cluster` CR, Grafana datasources ConfigMap, `backend` | Require wave-3 CRDs and services |
 
 ## Ingress
 
@@ -179,17 +196,17 @@ The controller Service uses NodePort `30800`, which the kind cluster maps to `lo
 trace-app:8800  →  kind NodePort 30800  →  ingress-nginx  →  Service/nest-be-example:80  →  Pod:3000
 ```
 
-Add the hostname to `/etc/hosts` (one-time setup):
+To reach the API from a browser or `curl`, add the hostname to `/etc/hosts`:
 
 ```bash
 echo "127.0.0.1 trace-app" | sudo tee -a /etc/hosts
 ```
 
-Once the bootstrap is applied and ArgoCD has synced, the API is reachable at:
-
 ```bash
 curl http://trace-app:8800/
 ```
+
+> **Note:** the traffic generator (`scripts/traffic-gen.go`) resolves `trace-app` to `127.0.0.1` internally via a custom dialer, so it works without the `/etc/hosts` entry.
 
 ## Building and Loading the Backend Image
 
@@ -203,7 +220,7 @@ docker build -t nest-be-example:latest apps/nest-be-example/
 kind load docker-image nest-be-example:latest --name monitoring-tutorial
 ```
 
-The `charts/apps/values.yaml` must reference this local image:
+The `charts/apps/values.yaml` references this local image:
 
 ```yaml
 image:
@@ -225,6 +242,8 @@ go run scripts/traffic-gen.go
 # custom base URL and interval
 go run scripts/traffic-gen.go -base-url http://trace-app:8800 -interval 500ms
 ```
+
+`trace-app` is resolved to `127.0.0.1` internally — no `/etc/hosts` changes needed to run the script.
 
 Stop with `Ctrl+C`. A summary (`total / success / errors`) is printed on exit, and running totals are logged every 50 requests.
 
