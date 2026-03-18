@@ -22,8 +22,8 @@ spec:
         spike_limit_percentage: 25
 
     exporters:
-      otlphttp/tempo:
-        endpoint: http://tempo.monitoring.svc.cluster.local:3100
+      otlp:
+        endpoint: tempo.monitoring.svc.cluster.local:4317 
         tls:
           insecure: true
 
@@ -32,4 +32,4 @@ spec:
         traces:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [otlphttp/tempo]
+          exporters: [otlp]
