@@ -13,20 +13,35 @@ spec:
       values: |
         loki:
           auth_enabled: false
+          deploymentMode: SingleBinary
+          
           commonConfig:
             replication_factor: 1
-          storage:
-            type: 'filesystem' # Just for home lab
           
-        deploymentMode: SingleBinary
-        
-        monitoring:
-          dashboards:
-            enabled: true
-          serviceMonitor:
-            enabled: true
-            metricsNamespace: monitoring
-            
+          storage:
+            type: filesystem
+            bucketNames:
+              chunks: chunks
+              ruler: ruler
+              admin: admin
+          
+          schemaConfig:
+            configs:
+              - from: "2024-01-01"
+                store: tsdb
+                object_store: filesystem
+                schema: v13
+                index:
+                  prefix: index_
+                  period: 24h
+
+        backend:
+          replicas: 0
+        read:
+          replicas: 0
+        write:
+          replicas: 0
+
         promtail:
           enabled: true
           config:
