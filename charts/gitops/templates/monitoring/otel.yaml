@@ -9,6 +9,8 @@ spec:
     repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
     targetRevision: 0.84.0
     chart: opentelemetry-operator
+    extraArgs:
+        - "--skip-schema-validation"
     helm:
       values: |
         admissionWebhooks:
