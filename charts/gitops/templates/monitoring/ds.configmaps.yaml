@@ -31,3 +31,4 @@ data:
             matcherRegex: "\"traceId\"\\s*:\\s*\"(\\w+)\""
             internalLinkEnabled: true
             internalLinkTargetUid: "tempo"
+            url: "$${__value.raw}"
