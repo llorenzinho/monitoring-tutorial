@@ -148,7 +148,7 @@ kubectl get secret argocd-initial-admin-secret -n argocd \
   -o jsonpath="{.data.password}" | base64 -d && echo
 ```
 
-The ArgoCD UI is available at [http://localhost:8080](http://localhost:8080) (username: `admin`).
+The ArgoCD UI is available by port-forwarding argocd server (username: `admin`).
 
 ## Building and Loading the Backend Image
 
@@ -230,6 +230,26 @@ curl http://trace-app:8800/
 ```
 
 > **Note:** the traffic generator (`scripts/traffic-gen.go`) resolves `trace-app` to `127.0.0.1` internally via a custom dialer, so it works without the `/etc/hosts` entry.
+
+## Observability in Action
+
+### Metrics — kube-prometheus-stack (Grafana)
+
+![Metrics dashboard showing CPU and Memory usage per pod](imgs/metrics.png)
+
+### Logs — Loki (Grafana Explore)
+
+![Loki log stream with structured JSON logs from the NestJS backend](imgs/logs.png)
+
+### Traces — Tempo (Grafana Explore)
+
+![Tempo trace list showing HTTP requests with durations and SQL spans](imgs/traces.png)
+
+### Log ↔ Trace Correlation
+
+![Grafana split view correlating a Loki log entry with the corresponding Tempo trace and SQL query](imgs/correlation.png)
+
+---
 
 ## Generating Traffic (Grafana test data)
 
